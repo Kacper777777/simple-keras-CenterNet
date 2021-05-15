@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, AveragePooling2D, Concatenate, \
-    Flatten, BatchNormalization
+    Flatten, Dense, BatchNormalization
 from tensorflow.keras.models import Model
 
 
@@ -29,17 +29,29 @@ def small_conv(input_shape):
 
     x = Conv2D(32, kernel_size=(3, 3), strides=1,
                padding='valid', activation='relu')(inputs)
+    x = MaxPooling2D(pool_size=(3, 3), strides=1, padding='valid')(x)
 
     x = Conv2D(64, kernel_size=(3, 3), strides=1,
                padding='valid', activation='relu')(x)
+    x = MaxPooling2D(pool_size=(3, 3), strides=1, padding='valid')(x)
 
     x = Conv2D(128, kernel_size=(3, 3), strides=1,
                padding='valid', activation='relu')(x)
+    x = MaxPooling2D(pool_size=(3, 3), strides=1, padding='valid')(x)
 
     x = Conv2D(256, kernel_size=(3, 3), strides=1,
                padding='valid', activation='relu')(x)
+    x = MaxPooling2D(pool_size=(3, 3), strides=1, padding='valid')(x)
 
-    x = AveragePooling2D(pool_size=(7, 7), strides=1, padding='valid')(x)
+    x = Conv2D(512, kernel_size=(3, 3), strides=1,
+               padding='valid', activation='relu')(x)
+    x = MaxPooling2D(pool_size=(3, 3), strides=1, padding='valid')(x)
+
+    x = Conv2D(1024, kernel_size=(3, 3), strides=1,
+               padding='valid', activation='relu')(x)
+    x = MaxPooling2D(pool_size=(3, 3), strides=1, padding='valid')(x)
+
+    x = AveragePooling2D(pool_size=(5, 5), strides=2, padding='valid')(x)
 
     x = Conv2D(128, kernel_size=(1, 1), strides=1,
                padding='valid', activation='relu')(x)
@@ -53,13 +65,18 @@ def inception_net(input_shape):
     # input image
     inputs = tf.keras.Input(shape=input_shape)
 
-    x = inception_module(inputs, [32, (48, 48), (16, 16), 16])
-    x = inception_module(x, [64, (48, 48), (32, 32), 32])
-    x = inception_module(x, [64, (96, 96), (32, 32), 32])
-    x = inception_module(x, [128, (96, 96), (64, 64), 64])
+    x = Conv2D(32, kernel_size=(3, 3), strides=1, padding='valid', activation='relu')(inputs)
+    x = Conv2D(64, kernel_size=(3, 3), strides=1, padding='valid', activation='relu')(x)
+    x = BatchNormalization()(x)
 
-    x = AveragePooling2D(pool_size=(7, 7), strides=1, padding='valid')(x)
-    x = Conv2D(256, kernel_size=(1, 1), strides=1,
+    x = inception_module(x, [64, (64, 128), (16, 32), 16])
+    x = inception_module(x, [128, (128, 192), (32, 64), 32])
+    x = inception_module(x, [192, (192, 256), (64, 128), 48])
+    x = BatchNormalization()(x)
+
+    x = AveragePooling2D(pool_size=(5, 5), strides=2, padding='valid')(x)
+
+    x = Conv2D(128, kernel_size=(1, 1), strides=2,
                padding='valid', activation='relu')(x)
 
     outputs = Flatten()(x)
@@ -109,13 +126,13 @@ def googlenet(input_shape):
     layer = inception_module(layer, [256, (160, 320), (32, 128), 128])  # 5a
     layer = inception_module(layer, [384, (192, 384), (48, 128), 128])  # 5b
     layer = AveragePooling2D(pool_size=(7, 7), strides=1, padding='valid')(layer)
-    layer = Flatten()(layer)
 
+    layer = Flatten()(layer)
     model = Model(inputs=layer_in, outputs=layer)
     return model
 
 
 if __name__ == '__main__':
     # build the model
-    backbone = inception_net((25, 50, 1))
+    backbone = small_conv((25, 50, 1))
     backbone.summary()
