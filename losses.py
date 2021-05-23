@@ -6,7 +6,7 @@ def focal_loss(hm_pred, hm_true):
     neg_mask = tf.cast(tf.less(hm_true, 1), tf.float32)
     neg_weights = tf.pow(1 - hm_true, 4)
 
-    pos_loss = -tf.math.log(tf.clip_by_value(hm_pred, 1e-4, 1. - 1e-4)) * tf.pow(1 - hm_pred, 2) * pos_mask * 10
+    pos_loss = -tf.math.log(tf.clip_by_value(hm_pred, 1e-4, 1. - 1e-4)) * tf.pow(1 - hm_pred, 2) * pos_mask
     neg_loss = -tf.math.log(tf.clip_by_value(1 - hm_pred, 1e-4, 1. - 1e-4)) * tf.pow(hm_pred, 2) * neg_weights * neg_mask
 
     num_pos = tf.reduce_sum(pos_mask)
@@ -26,7 +26,7 @@ def reg_l1_loss(y_pred, y_true, indices, mask):
     y_pred = tf.gather(y_pred, indices, batch_dims=1)
     mask = tf.tile(tf.expand_dims(mask, axis=-1), (1, 1, 2))
     total_loss = tf.reduce_sum(tf.abs(y_true * mask - y_pred * mask))
-    reg_loss = total_loss / (tf.reduce_sum(mask) + 1e-4)
+    reg_loss = total_loss / (tf.reduce_sum(mask) + 1)
     return reg_loss
 
 
