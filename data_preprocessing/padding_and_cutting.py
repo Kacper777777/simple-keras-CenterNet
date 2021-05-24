@@ -41,7 +41,6 @@ def resize_and_cut(image, target_size):
     height_ratio = input_height / target_height
 
     scale_factor = min(width_ratio, height_ratio)
-    print("scale_factor", scale_factor)
 
     image = cv2.resize(image, (round(image.shape[1] / scale_factor), round(image.shape[0] / scale_factor)))
     scaled_image_dimensions = (image.shape[0], image.shape[1])
