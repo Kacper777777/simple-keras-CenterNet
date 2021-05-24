@@ -26,7 +26,7 @@ def reg_l1_loss(y_pred, y_true, indices, mask):
     y_pred = tf.gather(y_pred, indices, batch_dims=1)
     mask = tf.tile(tf.expand_dims(mask, axis=-1), (1, 1, 2))
     total_loss = tf.reduce_sum(tf.abs(y_true * mask - y_pred * mask))
-    reg_loss = total_loss / (tf.reduce_sum(mask) + 1)
+    reg_loss = total_loss / (tf.reduce_sum(mask) + 0.001)
     return reg_loss
 
 
