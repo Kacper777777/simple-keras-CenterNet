@@ -16,10 +16,10 @@ def main():
     # configuration
     WORKING_DIR = DATA_REAL_PATH
     model_path = os.path.join(WORKING_DIR, 'model.h5')
-    classes = ['car']
+    classes = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
     num_classes = len(classes)
-    input_shape = (512, 512, 3)
-    output_shape = (128, 128)
+    input_shape = (64, 64, 1)
+    output_shape = (16, 16)
     max_objects = 20
 
     # build the model
@@ -29,12 +29,12 @@ def main():
                                                       max_objects=max_objects)
 
     # load weights
-    # model.load_weights(model_path, by_name=True, skip_mismatch=True)
+    model.load_weights(model_path, by_name=True, skip_mismatch=True)
 
     # load the data
     data_loader = DataLoader(num_classes, input_shape, output_shape, max_objects)
 
-    dir_ = os.path.join(WORKING_DIR, 'cars/*.png')
+    dir_ = os.path.join(WORKING_DIR, 'numbers/*.png')
 
     batch_images, batch_hms, batch_whs, batch_regs, \
     batch_reg_masks, batch_indices = data_loader.load_from_dir(dir_)
@@ -61,7 +61,7 @@ def main():
         x=[batch_images, batch_hms, batch_whs, batch_regs, batch_reg_masks, batch_indices],
         y=np.zeros(batch_images.shape[0]),
         epochs=epochs,
-        batch_size=32,
+        batch_size=128,
         shuffle=True,
         validation_split=0.2,
         callbacks=[early_stopping],
