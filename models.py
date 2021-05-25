@@ -4,7 +4,6 @@ from tensorflow.keras.layers import Conv2D, Conv2DTranspose, MaxPooling2D, Avera
 from tensorflow.keras.models import Model
 from tensorflow_core.python.keras.layers import ReLU
 from tensorflow_core.python.keras.regularizers import l2
-from tensorflow.keras.applications import ResNet50
 from losses import main_loss
 
 
@@ -63,7 +62,6 @@ def inception_module(x, filters):
 
 
 def googlenet(input_shape=(512, 512, 3), output_shape=(128, 128), num_classes=1, max_objects=20):
-
     image_input = tf.keras.Input(shape=input_shape)
 
     # stage-1
@@ -73,6 +71,9 @@ def googlenet(input_shape=(512, 512, 3), output_shape=(128, 128), num_classes=1,
 
     # stage-2
     layer = Conv2D(filters=64, kernel_size=(1, 1), strides=1, padding='same', activation='relu')(layer)
+
+    loc_layer = layer
+
     layer = Conv2D(filters=192, kernel_size=(3, 3), strides=1, padding='same', activation='relu')(layer)
     layer = BatchNormalization()(layer)
     layer = MaxPooling2D(pool_size=(3, 3), strides=2, padding='same')(layer)
@@ -97,13 +98,15 @@ def googlenet(input_shape=(512, 512, 3), output_shape=(128, 128), num_classes=1,
     layer = inception_module(layer, [384, (192, 384), (48, 128), 128])  # 5b
     layer = AveragePooling2D(pool_size=(9, 9), strides=1, padding='valid')(layer)
 
-    # layer = Conv2DTranspose(filters=256, kernel_size=3, strides=2, padding='same')(layer)
-    layer = Conv2DTranspose(filters=128, kernel_size=3, strides=2, padding='same')(layer)
-    layer = Conv2DTranspose(filters=64, kernel_size=3, strides=2, padding='same')(layer)
-    layer = Conv2DTranspose(filters=32, kernel_size=3, strides=2, padding='same')(layer)
-    layer = Conv2DTranspose(filters=1, kernel_size=3, strides=2, padding='same')(layer)
+    layer = BatchNormalization()(layer)
 
-    backbone_output = layer
+    layer = Conv2DTranspose(filters=512, kernel_size=1, strides=2, padding='same', activation='selu')(layer)
+    layer = Conv2DTranspose(filters=256, kernel_size=3, strides=2, padding='same', activation='selu')(layer)
+    layer = Conv2DTranspose(filters=128, kernel_size=3, strides=2, padding='same', activation='selu')(layer)
+    layer = Conv2DTranspose(filters=64, kernel_size=3, strides=2, padding='same', activation='selu')(layer)
+
+    backbone_output = BatchNormalization()(layer)
+    backbone_output = ReLU()(backbone_output)
 
     hm_input = Input(shape=(output_shape[0], output_shape[1], num_classes))
     wh_input = Input(shape=(max_objects, 2))
@@ -111,23 +114,22 @@ def googlenet(input_shape=(512, 512, 3), output_shape=(128, 128), num_classes=1,
     reg_mask_input = Input(shape=(max_objects,))
     index_input = Input(shape=(max_objects,))
 
-    x = BatchNormalization()(backbone_output)
-
     # hm header
-    y1 = Conv2D(64, 1, kernel_initializer='he_normal', padding='same')(x)
+    y1 = Conv2D(64, 1, kernel_initializer='he_normal', padding='same')(backbone_output)
+    y1 = Add()([y1, loc_layer])
     y1 = BatchNormalization()(y1)
     y1 = ReLU()(y1)
     y1 = Conv2D(num_classes, 1, kernel_initializer='he_normal', kernel_regularizer=l2(5e-4),
                 activation='sigmoid')(y1)
 
     # wh header
-    y2 = Conv2D(64, 1, kernel_initializer='he_normal', padding='same')(x)
+    y2 = Conv2D(64, 1, kernel_initializer='he_normal', padding='same')(backbone_output)
     y2 = BatchNormalization()(y2)
     y2 = ReLU()(y2)
     y2 = Conv2D(2, 1, kernel_initializer='he_normal', kernel_regularizer=l2(5e-4))(y2)
 
     # reg header
-    y3 = Conv2D(64, 1, kernel_initializer='he_normal', padding='same')(x)
+    y3 = Conv2D(64, 1, kernel_initializer='he_normal', padding='same')(backbone_output)
     y3 = BatchNormalization()(y3)
     y3 = ReLU()(y3)
     y3 = Conv2D(2, 1, kernel_initializer='he_normal', kernel_regularizer=l2(5e-4))(y3)
@@ -148,37 +150,34 @@ def small_conv(input_shape=(64, 64, 1), output_shape=(16, 16), num_classes=10, m
     image_input = tf.keras.Input(shape=input_shape)
 
     x = Conv2D(32, kernel_size=(3, 3), strides=1,
-               padding='valid', activation='relu')(image_input)
-    x = MaxPooling2D(pool_size=(3, 3), strides=1, padding='valid')(x)
+               padding='same', activation='relu')(image_input)
 
     x = Conv2D(64, kernel_size=(3, 3), strides=1,
-               padding='valid', activation='relu')(x)
-    x = MaxPooling2D(pool_size=(3, 3), strides=1, padding='valid')(x)
+               padding='same', activation='relu')(x)
+    x = MaxPooling2D(pool_size=(3, 3), strides=2, padding='same')(x)
 
     x = Conv2D(128, kernel_size=(3, 3), strides=1,
-               padding='valid', activation='relu')(x)
-    x = MaxPooling2D(pool_size=(3, 3), strides=1, padding='valid')(x)
+               padding='same', activation='relu')(x)
 
     x = Conv2D(256, kernel_size=(3, 3), strides=1,
-               padding='valid', activation='relu')(x)
-    x = MaxPooling2D(pool_size=(3, 3), strides=1, padding='valid')(x)
+               padding='same', activation='relu')(x)
+    x = MaxPooling2D(pool_size=(3, 3), strides=2, padding='same')(x)
 
-    x = Conv2D(512, kernel_size=(3, 3), strides=2,
-               padding='valid', activation='relu')(x)
-    x = MaxPooling2D(pool_size=(3, 3), strides=2, padding='valid')(x)
+    loc_layer = x
 
-    x = AveragePooling2D(pool_size=(4, 4), strides=1, padding='valid')(x)
+    x = Conv2D(512, kernel_size=(3, 3), strides=4,
+               padding='same', activation='relu')(x)
 
-    x = Conv2DTranspose(filters=128, kernel_size=3, strides=1, padding='valid')(x)
-    x = Conv2DTranspose(filters=64, kernel_size=3, strides=1, padding='valid')(x)
-    x = Conv2DTranspose(filters=32, kernel_size=3, strides=1, padding='valid')(x)
-    x = Conv2DTranspose(filters=1, kernel_size=3, strides=1, padding='valid')(x)
+    x = Conv2D(512, kernel_size=(1, 1), strides=4,
+               padding='same', activation='relu')(x)
 
-    backbone_output = x
-    x = BatchNormalization()(backbone_output)
-    # model = Model(image_input=image_input, outputs=outputs)
-    # return model
-    ##########
+    x = Conv2DTranspose(filters=128, kernel_size=3, strides=2, padding='same')(x)
+    x = Conv2DTranspose(filters=64, kernel_size=3, strides=2, padding='same')(x)
+    x = Conv2DTranspose(filters=32, kernel_size=3, strides=2, padding='same')(x)
+    x = Conv2DTranspose(filters=1, kernel_size=3, strides=2, padding='same')(x)
+
+    backbone_output = BatchNormalization()(x)
+    backbone_output = ReLU()(backbone_output)
 
     hm_input = Input(shape=(output_shape[0], output_shape[1], num_classes))
     wh_input = Input(shape=(max_objects, 2))
@@ -187,20 +186,21 @@ def small_conv(input_shape=(64, 64, 1), output_shape=(16, 16), num_classes=10, m
     index_input = Input(shape=(max_objects,))
 
     # hm header
-    y1 = Conv2D(64, 1, kernel_initializer='he_normal', padding='same')(x)
+    y1 = Conv2D(64, 1, kernel_initializer='he_normal', padding='same')(backbone_output)
+    #y1 = Add()([y1, loc_layer])
     y1 = BatchNormalization()(y1)
     y1 = ReLU()(y1)
     y1 = Conv2D(num_classes, 1, kernel_initializer='he_normal', kernel_regularizer=l2(5e-4),
                 activation='sigmoid')(y1)
 
     # wh header
-    y2 = Conv2D(64, 1, kernel_initializer='he_normal', padding='same')(x)
+    y2 = Conv2D(64, 1, kernel_initializer='he_normal', padding='same')(backbone_output)
     y2 = BatchNormalization()(y2)
     y2 = ReLU()(y2)
     y2 = Conv2D(2, 1, kernel_initializer='he_normal', kernel_regularizer=l2(5e-4))(y2)
 
     # reg header
-    y3 = Conv2D(64, 1, kernel_initializer='he_normal', padding='same')(x)
+    y3 = Conv2D(64, 1, kernel_initializer='he_normal', padding='same')(backbone_output)
     y3 = BatchNormalization()(y3)
     y3 = ReLU()(y3)
     y3 = Conv2D(2, 1, kernel_initializer='he_normal', kernel_regularizer=l2(5e-4))(y3)
