@@ -1,73 +1,82 @@
 import tensorflow as tf
+from tensorflow.keras.callbacks import LearningRateScheduler
 import numpy as np
 import random
 import os
 from data_preprocessing.prepare_data import DataLoader
-from models import googlenet, small_conv
 from utils import DATA_REAL_PATH
+from centernet_detector import CenterNetDetector
+
+
+def lr_schedule(epoch):
+    lr = 1
+    if epoch <= 50:
+        lr = 1e-3
+    elif epoch <= 100:
+        lr = 1e-4
+    else:
+        lr = 1e-5
+    return lr
 
 
 def main():
     # for reproducibility
     np.random.seed(42)
     random.seed(42)
+    # for readability
     np.set_printoptions(formatter={'float': lambda x: "{0:0.2f}".format(x)})
 
     # configuration
-    WORKING_DIR = DATA_REAL_PATH
-    model_path = os.path.join(WORKING_DIR, 'model.h5')
-    classes = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
-    num_classes = len(classes)
-    input_shape = (64, 64, 1)
-    output_shape = (16, 16)
-    max_objects = 20
+    model_path = os.path.join(DATA_REAL_PATH, 'model.h5')
+    input_size = 256
+    channels = 3
+    classes_list = ['car', 'truck', 'bus', 'pedestrian']
+    num_classes = len(classes_list)
+    max_objects = 50
 
-    # build the model
-    model, prediction_model, debug_model = small_conv(input_shape=input_shape,
-                                                      output_shape=output_shape,
-                                                      num_classes=num_classes,
-                                                      max_objects=max_objects)
+    detector = CenterNetDetector(model_name='small_convnet',
+                                 input_shape=(input_size, input_size, channels),
+                                 classes_list=classes_list,
+                                 max_objects=max_objects)
 
-    # load weights
-    model.load_weights(model_path, by_name=True, skip_mismatch=True)
+    detector.load_weights(model_path)
 
-    # load the data
-    data_loader = DataLoader(num_classes, input_shape, output_shape, max_objects)
+    # load the training data
+    data_loader = DataLoader(input_size=input_size, downsample_factor=4,
+                             num_classes=num_classes, max_objects=max_objects)
 
-    dir_ = os.path.join(WORKING_DIR, 'numbers/*.png')
+    dir_ = os.path.join(DATA_REAL_PATH, 'cars/*.png')
 
     batch_images, batch_hms, batch_whs, batch_regs, \
-    batch_reg_masks, batch_indices = data_loader.load_from_dir(dir_)
+    batch_reg_masks, batch_indices = data_loader.load_from_dir(dir_, True)
 
-    # Useful callbacks
+    # training configuration
+    epochs = 150
     early_stopping = tf.keras.callbacks.EarlyStopping(
-        monitor="loss", patience=5, restore_best_weights=True)
-
-    epochs = 50
-    lr = 1e-3
-
-    # create optimizer
+        monitor="val_loss", patience=5, restore_best_weights=True)
+    lr = LearningRateScheduler(lr_schedule)
+    callbacks_list = [early_stopping, lr]
     optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
 
-    model.compile(optimizer=optimizer,
-                  loss={'centernet_loss': lambda y_true, y_pred: y_pred},
-                  run_eagerly=True)
+    detector.model.compile(optimizer=optimizer,
+                           loss={'centernet_loss': lambda y_true, y_pred: y_pred},
+                           run_eagerly=True)
 
-    model.summary()
+    detector.model.summary()
 
     print(batch_images.shape)
 
-    model.fit(
+    detector.model.fit(
         x=[batch_images, batch_hms, batch_whs, batch_regs, batch_reg_masks, batch_indices],
         y=np.zeros(batch_images.shape[0]),
         epochs=epochs,
         batch_size=128,
         shuffle=True,
         validation_split=0.2,
-        callbacks=[early_stopping],
+        callbacks=callbacks_list,
     )
 
-    model.save_weights(model_path)
+    detector.model.save_weights(model_path)
 
 
 if __name__ == '__main__':
