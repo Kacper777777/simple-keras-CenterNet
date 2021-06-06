@@ -5,7 +5,7 @@ import random
 import os
 from data_preprocessing.prepare_data import DataLoader
 from utils import DATA_REAL_PATH
-from centernet_detector import CenterNetDetector
+from digit_detector.centernet_digit_detector import DigitDetector
 
 
 def lr_schedule(epoch):
@@ -34,13 +34,13 @@ def main():
     num_classes = len(classes_list)
     max_objects = 10
 
-    detector = CenterNetDetector(model_name='small_convnet',
-                                 input_shape=(input_size, input_size, channels),
-                                 classes_list=classes_list,
-                                 max_objects=max_objects,
-                                 resize_and_pad=True,
-                                 grayscale=True,
-                                 scale_values=1/255)
+    detector = DigitDetector(model_name='small_convnet',
+                             input_shape=(input_size, input_size, channels),
+                             classes_list=classes_list,
+                             max_objects=max_objects,
+                             resize_and_pad=True,
+                             grayscale=True,
+                             scale_values=1/255)
 
     # detector.load_weights(model_path)
 

@@ -2,7 +2,7 @@ from centernet_detector import CenterNetDetector
 import numpy as np
 
 
-class NumbersDetector(CenterNetDetector):
+class DigitDetector(CenterNetDetector):
     def __init__(self, model_name, input_shape, classes_list, max_objects,
                  resize_and_pad, grayscale, scale_values):
         super().__init__(model_name, input_shape, classes_list, max_objects,
