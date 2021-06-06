@@ -7,7 +7,7 @@ from tensorflow_core.python.keras.regularizers import l2
 from losses import main_loss
 
 
-def topk(hm, max_objects=20):
+def topk(hm, max_objects):
     b, h, w, c = tf.shape(hm)[0], tf.shape(hm)[1], tf.shape(hm)[2], tf.shape(hm)[3]
     hm = tf.reshape(hm, (b, -1))  # (b, h * w * c)
     scores, indices = tf.nn.top_k(hm, k=max_objects)  # (b, k), (b, k)
@@ -18,7 +18,7 @@ def topk(hm, max_objects=20):
     return scores, indices, class_ids, xs, ys
 
 
-def decode(hm, wh, reg, max_objects=20):
+def decode(hm, wh, reg, max_objects):
     scores, indices, class_ids, xs, ys = topk(hm, max_objects=max_objects)
     b = tf.shape(hm)[0]
     # (b, h * w, 2)
@@ -42,7 +42,7 @@ def decode(hm, wh, reg, max_objects=20):
     return detections
 
 
-def small_convnet(input_shape=(64, 64, 1), num_classes=1, max_objects=50):
+def small_convnet(input_shape=(64, 64, 1), num_classes=1, max_objects=10):
     # input image
     image_input = tf.keras.Input(shape=input_shape)
 
@@ -71,7 +71,7 @@ def small_convnet(input_shape=(64, 64, 1), num_classes=1, max_objects=50):
     backbone_output = BatchNormalization()(x)
     backbone_output = ReLU()(backbone_output)
 
-    hm_input = Input(shape=(input_shape[0] / 4, input_shape[1] / 4, num_classes))
+    hm_input = Input(shape=(input_shape[0] // 4, input_shape[1] // 4, num_classes))
     wh_input = Input(shape=(max_objects, 2))
     reg_input = Input(shape=(max_objects, 2))
     reg_mask_input = Input(shape=(max_objects,))
@@ -101,7 +101,7 @@ def small_convnet(input_shape=(64, 64, 1), num_classes=1, max_objects=50):
     model = Model(inputs=[image_input, hm_input, wh_input, reg_input,
                           reg_mask_input, index_input], outputs=[loss_])
 
-    detections = Lambda(lambda z: decode(*z))([y1, y2, y3])
+    detections = Lambda(lambda z: decode(*z, max_objects=max_objects))([y1, y2, y3])
     prediction_model = Model(inputs=image_input, outputs=detections)
     debug_model = Model(inputs=image_input, outputs=[y1, y2, y3])
     return model, prediction_model, debug_model

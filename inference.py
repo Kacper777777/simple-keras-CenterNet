@@ -21,7 +21,7 @@ def main():
     model_path = os.path.join(DATA_REAL_PATH, 'model.h5')
     input_size = 256
     channels = 3
-    classes_list = ['car', 'truck', 'bus', 'pedestrian']
+    classes_list = ['car', 'human']
     num_classes = len(classes_list)
     max_objects = 50
     score_threshold = 0.7
@@ -29,7 +29,10 @@ def main():
     detector = CenterNetDetector(model_name='small_convnet',
                                  input_shape=(input_size, input_size, channels),
                                  classes_list=classes_list,
-                                 max_objects=max_objects)
+                                 max_objects=max_objects,
+                                 resize_and_pad=False,
+                                 grayscale=False,
+                                 scale_values=1)
 
     detector.load_weights(model_path)
 

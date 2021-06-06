@@ -11,7 +11,7 @@ class DataLoader:
     def __init__(self, input_size, downsample_factor, num_classes, max_objects, grayscale=False):
         self.input_size = input_size
         self.downsample_factor = downsample_factor
-        self.output_size = input_size / downsample_factor
+        self.output_size = input_size // downsample_factor
         self.num_classes = num_classes
         self.max_objects = max_objects
         self.grayscale = grayscale
