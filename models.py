@@ -19,6 +19,12 @@ def topk(hm, max_objects):
 
 
 def decode(hm, wh, reg, max_objects):
+    max_pool_2d = tf.keras.layers.MaxPooling2D(pool_size=(3, 3), strides=1, padding='same')
+    maxpooled_hm = max_pool_2d(hm)
+    difference = maxpooled_hm - hm
+    mask = tf.cast(tf.equal(difference, 0), tf.float32)
+    hm = hm * mask
+
     scores, indices, class_ids, xs, ys = topk(hm, max_objects=max_objects)
     b = tf.shape(hm)[0]
     # (b, h * w, 2)
