@@ -15,5 +15,12 @@ class DigitDetector(CenterNetDetector):
         numbers = numbers.astype(np.int16)
         return numbers
 
-    def evaluate_model_performance(self, images, annotations):
-        pass
+    def evaluate_model_performance(self, images, annotations, score_threshold):
+        correct_predictions = 0
+        for i in range(images.shape[0]):
+            inputs = images[i]
+            inputs = np.expand_dims(inputs, axis=0)
+            number = self.recognize_number(inputs, score_threshold)
+            if number == annotations[i]:
+                correct_predictions += 1
+        return correct_predictions / images.shape[0]
