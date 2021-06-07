@@ -52,10 +52,19 @@ def small_convnet(input_shape=(64, 64, 1), num_classes=1, max_objects=10):
     # input image
     image_input = tf.keras.Input(shape=input_shape)
 
-    x = Conv2D(32, kernel_size=(3, 3), strides=1,
+    x = Conv2D(16, kernel_size=(3, 3), strides=1,
                padding='same', activation='relu')(image_input)
 
+    x = Conv2D(32, kernel_size=(3, 3), strides=1,
+               padding='same', activation='relu')(x)
+
+    x = Conv2D(48, kernel_size=(3, 3), strides=1,
+               padding='same', activation='relu')(x)
+
     x = Conv2D(64, kernel_size=(3, 3), strides=1,
+               padding='same', activation='relu')(x)
+
+    x = Conv2D(80, kernel_size=(3, 3), strides=1,
                padding='same', activation='relu')(x)
 
     x = Conv2D(96, kernel_size=(3, 3), strides=1,
@@ -63,13 +72,13 @@ def small_convnet(input_shape=(64, 64, 1), num_classes=1, max_objects=10):
 
     x = MaxPooling2D(pool_size=(3, 3), strides=2, padding='same')(x)
 
+    x = Conv2D(96, kernel_size=(3, 3), strides=1,
+               padding='same', activation='relu')(x)
+
+    x = Conv2D(112, kernel_size=(3, 3), strides=1,
+               padding='same', activation='relu')(x)
+
     x = Conv2D(128, kernel_size=(3, 3), strides=1,
-               padding='same', activation='relu')(x)
-
-    x = Conv2D(192, kernel_size=(3, 3), strides=1,
-               padding='same', activation='relu')(x)
-
-    x = Conv2D(256, kernel_size=(3, 3), strides=1,
                padding='same', activation='relu')(x)
 
     x = MaxPooling2D(pool_size=(3, 3), strides=2, padding='same')(x)
