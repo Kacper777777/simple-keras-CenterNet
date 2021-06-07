@@ -4,7 +4,7 @@ import random
 import time
 from data_preprocessing.prepare_data import DataLoader
 from utils import DATA_REAL_PATH
-from digit_detector.centernet_digit_detector import NumbersDetector
+from digit_detector.centernet_digit_detector import DigitDetector
 
 
 def main():
@@ -23,13 +23,13 @@ def main():
     max_objects = 10
     score_threshold = 0.5
 
-    detector = NumbersDetector(model_name='small_convnet',
-                               input_shape=(input_size, input_size, channels),
-                               classes_list=classes_list,
-                               max_objects=max_objects,
-                               resize_and_pad=False,
-                               grayscale=True,
-                               scale_values=1)
+    detector = DigitDetector(model_name='small_convnet',
+                             input_shape=(input_size, input_size, channels),
+                             classes_list=classes_list,
+                             max_objects=max_objects,
+                             resize_and_pad=False,
+                             grayscale=True,
+                             scale_values=1)
 
     detector.load_weights(model_path)
 
