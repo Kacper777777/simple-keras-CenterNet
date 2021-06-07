@@ -10,9 +10,9 @@ from digit_detector.centernet_digit_detector import DigitDetector
 
 def lr_schedule(epoch):
     lr = 1
-    if epoch <= 50:
+    if epoch <= 30:
         lr = 1e-3
-    elif epoch <= 100:
+    elif epoch <= 60:
         lr = 1e-4
     else:
         lr = 1e-5
@@ -56,7 +56,7 @@ def main():
     # training configuration
     epochs = 150
     early_stopping = tf.keras.callbacks.EarlyStopping(
-        monitor="val_loss", patience=5, restore_best_weights=True)
+        monitor="loss", patience=5, restore_best_weights=True)
     lr_scheduler = LearningRateScheduler(lr_schedule)
     callbacks_list = [early_stopping, lr_scheduler]
     optimizer = tf.keras.optimizers.Adam()
