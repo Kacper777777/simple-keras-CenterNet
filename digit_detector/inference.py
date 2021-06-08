@@ -1,9 +1,12 @@
 import os
-import numpy as np
 import random
+import cv2
+import numpy as np
 import time
+import glob
 from data_preprocessing.prepare_data import DataLoader
 from utils import DATA_REAL_PATH
+from data_preprocessing.padding_and_cutting import resize_and_pad
 from digit_detector.centernet_digit_detector import DigitDetector
 
 
@@ -38,18 +41,53 @@ def main():
                              num_classes=num_classes, max_objects=max_objects)
 
     dir_ = os.path.join(DATA_REAL_PATH, 'numbers/*.png')
+    annotations_file = os.path.join(DATA_REAL_PATH, 'numbers', 'annotations.txt')
+    with open(annotations_file, 'r') as reader:
+        annotations = reader.readlines()
 
-    batch_images, batch_hms, batch_whs, batch_regs, \
-    batch_reg_masks, batch_indices = data_loader.load_from_dir(dir_, False)
+    image_names, images, _, _, _, _, _ = data_loader.load_from_dir(dir_, False)
 
-    for i in range(batch_images.shape[0]):
-        inputs = batch_images[i]
+    # for visualization
+    colors = [np.random.randint(0, 256, 3).tolist() for i in range(num_classes)]
+
+    correctly_classified = 0
+
+    for i in range(images.shape[0]):
+        inputs = images[i]
         inputs = np.expand_dims(inputs, axis=0)
+        detections = detector.detect(inputs, score_threshold)
+        output_image = images[i] * 255
+
+        for detection in detections:
+            xmin = int(round(detection[0]))
+            ymin = int(round(detection[1]))
+            xmax = int(round(detection[2]))
+            ymax = int(round(detection[3]))
+            class_id = int(detection[5])
+            color = colors[class_id]
+            class_name = classes_list[class_id]
+            label = class_name
+
+            cv2.rectangle(output_image, (xmin, ymin), (xmax, ymax), color, 1)
+            ret, baseline = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.2, 1)
+            cv2.rectangle(output_image, (xmin, ymax - ret[1] - baseline), (xmin + ret[0], ymax), color, -1)
+            cv2.putText(output_image, label, (xmin, ymax - baseline), cv2.FONT_HERSHEY_SIMPLEX, 0.2, (0, 0, 0), 1)
+
         number = detector.recognize_number(inputs, score_threshold)
-        if len(number):
-            print(f"Recognized number: {number}.")
+        name = image_names[i]
+        index = int(name[name.rfind('\\') + 1:name.rfind('.')]) - 1
+        actual = annotations[index][:-1]
+        predicted = [str(elem) for elem in number]
+        predicted = ''.join(predicted)
+        if predicted == actual:
+            correctly_classified += 1
+            cv2.imwrite(os.path.join(DATA_REAL_PATH, 'digits_output_good', f'image_{i}.jpg'), images[i] * 255)
+            cv2.imwrite(os.path.join(DATA_REAL_PATH, 'digits_output_good', f'image_{i}_predicted.jpg'), output_image)
         else:
-            print(f"There is no number on the image.")
+            cv2.imwrite(os.path.join(DATA_REAL_PATH, 'digits_output_bad', f'image_{i}.jpg'), images[i] * 255)
+            cv2.imwrite(os.path.join(DATA_REAL_PATH, 'digits_output_bad', f'image_{i}_actual_{actual}_predicted_{predicted}.jpg'), output_image)
+
+    print(f"The accuracy of the model in recognizing whole numbers is: {correctly_classified/images.shape[0]}")
 
 
 if __name__ == '__main__':
