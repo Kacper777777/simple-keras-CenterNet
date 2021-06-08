@@ -38,9 +38,9 @@ def main():
                                  input_shape=(input_size, input_size, channels),
                                  classes_list=classes_list,
                                  max_objects=max_objects,
-                                 resize_and_pad=True,
+                                 resize_and_pad=False,
                                  grayscale=False,
-                                 scale_values=1/255)
+                                 scale_values=1)
 
     # detector.load_weights(model_path)
 
