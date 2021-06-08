@@ -10,9 +10,9 @@ from centernet_detector import CenterNetDetector
 
 def lr_schedule(epoch):
     lr = 1
-    if epoch <= 50:
+    if epoch <= 20:
         lr = 1e-3
-    elif epoch <= 100:
+    elif epoch <= 40:
         lr = 1e-4
     else:
         lr = 1e-5
@@ -53,7 +53,7 @@ def main():
     _, images, hms, whs, regs, reg_masks, indices = data_loader.load_from_dir(dir_, True)
 
     # training configuration
-    epochs = 150
+    epochs = 100
     early_stopping = tf.keras.callbacks.EarlyStopping(
         monitor="val_loss", patience=5, restore_best_weights=True)
     lr_scheduler = LearningRateScheduler(lr_schedule)
@@ -72,7 +72,7 @@ def main():
         x=[images, hms, whs, regs, reg_masks, indices],
         y=np.zeros(images.shape[0]),
         epochs=epochs,
-        batch_size=128,
+        batch_size=16,
         shuffle=True,
         validation_split=0.2,
         callbacks=callbacks_list,
