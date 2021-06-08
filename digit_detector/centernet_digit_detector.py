@@ -11,9 +11,9 @@ class DigitDetector(CenterNetDetector):
     def recognize_number(self, inputs, score_threshold):
         detections = self.detect(inputs, score_threshold)
         detections = detections[np.argsort(detections[:, 0])]
-        numbers = detections[:, 5]
-        numbers = numbers.astype(np.int16)
-        return numbers
+        number = detections[:, 5]
+        number = number.astype(np.int16)
+        return number
 
     def evaluate_model_performance(self, images, annotations, score_threshold):
         correct_predictions = 0
