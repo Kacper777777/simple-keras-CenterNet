@@ -5,8 +5,8 @@ import numpy as np
 import time
 import glob
 from data_preprocessing.prepare_data import DataLoader
-from data_preprocessing.padding_and_cutting import resize_and_pad
 from utils import DATA_REAL_PATH
+from data_preprocessing.padding_and_cutting import resize_and_pad
 from centernet_detector import CenterNetDetector
 
 
@@ -42,21 +42,20 @@ def main():
 
     dir_ = os.path.join(DATA_REAL_PATH, 'cars/*.png')
 
-    batch_images, batch_hms, batch_whs, batch_regs, \
-    batch_reg_masks, batch_indices = data_loader.load_from_dir(dir_, False)
+    _, images, _, _, _, _, _ = data_loader.load_from_dir(dir_, False)
 
     image_files = glob.glob(dir_)
     image_files = image_files[:20]
     colour_images = [cv2.imread(file) for file in image_files]
     colour_images = [resize_and_pad(img, (input_size, input_size))[0] for img in colour_images]
 
-    print(batch_images.shape)
+    print(images.shape)
 
     # for visualization
     colors = [np.random.randint(0, 256, 3).tolist() for i in range(num_classes)]
 
-    for i in range(batch_images.shape[0]):
-        inputs = batch_images[i]
+    for i in range(images.shape[0]):
+        inputs = images[i]
         inputs = np.expand_dims(inputs, axis=0)
         src_image = colour_images[i]
         detections = detector.detect(inputs, score_threshold)[0]
@@ -78,7 +77,7 @@ def main():
             cv2.putText(src_image, label, (xmin, ymax - baseline), cv2.FONT_HERSHEY_SIMPLEX, 0.2, (0, 0, 0), 1)
 
         cv2.imwrite(os.path.join(DATA_REAL_PATH, 'output', f'image_with_boxes{i}.jpg'), src_image)
-        cv2.imwrite(os.path.join(DATA_REAL_PATH, 'output', f'image_original{i}.jpg'), batch_images[i] * 255)
+        cv2.imwrite(os.path.join(DATA_REAL_PATH, 'output', f'image_original{i}.jpg'), images[i] * 255)
 
 
 if __name__ == '__main__':

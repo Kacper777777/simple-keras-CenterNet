@@ -50,8 +50,7 @@ def main():
 
     dir_ = os.path.join(DATA_REAL_PATH, 'cars/*.png')
 
-    batch_images, batch_hms, batch_whs, batch_regs, \
-    batch_reg_masks, batch_indices = data_loader.load_from_dir(dir_, True)
+    _, images, hms, whs, regs, reg_masks, indices = data_loader.load_from_dir(dir_, True)
 
     # training configuration
     epochs = 150
@@ -67,11 +66,11 @@ def main():
 
     detector.model.summary()
 
-    print(f'The shape of the training data is: {batch_images.shape}')
+    print(f'The shape of the training data is: {images.shape}')
 
     detector.model.fit(
-        x=[batch_images, batch_hms, batch_whs, batch_regs, batch_reg_masks, batch_indices],
-        y=np.zeros(batch_images.shape[0]),
+        x=[images, hms, whs, regs, reg_masks, indices],
+        y=np.zeros(images.shape[0]),
         epochs=epochs,
         batch_size=128,
         shuffle=True,
