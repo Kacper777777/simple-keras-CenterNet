@@ -17,28 +17,28 @@ class DataLoader:
         self.grayscale = grayscale
 
     def load_from_dir(self, dir_, shuffle):
-        image_files = glob.glob(dir_)
+        image_names = glob.glob(dir_)
         if shuffle:
-            random.shuffle(image_files)
+            random.shuffle(image_names)
         channels = 1 if self.grayscale else 3
-        batch_images = np.zeros((len(image_files), self.input_size, self.input_size, channels),
-                                dtype=np.float32)
-        batch_hms = np.zeros((len(image_files), self.output_size, self.output_size, self.num_classes),
+        images = np.zeros((len(image_names), self.input_size, self.input_size, channels),
+                          dtype=np.float32)
+        hms = np.zeros((len(image_names), self.output_size, self.output_size, self.num_classes),
                              dtype=np.float32)
-        batch_whs = np.zeros((len(image_files), self.max_objects, 2), dtype=np.float32)
-        batch_regs = np.zeros((len(image_files), self.max_objects, 2), dtype=np.float32)
-        batch_reg_masks = np.zeros((len(image_files), self.max_objects), dtype=np.float32)
-        batch_indices = np.zeros((len(image_files), self.max_objects), dtype=np.float32)
+        whs = np.zeros((len(image_names), self.max_objects, 2), dtype=np.float32)
+        regs = np.zeros((len(image_names), self.max_objects, 2), dtype=np.float32)
+        reg_masks = np.zeros((len(image_names), self.max_objects), dtype=np.float32)
+        indices = np.zeros((len(image_names), self.max_objects), dtype=np.float32)
 
         file_index = 0
-        for file in image_files:
+        for file in image_names:
             img = cv2.imread(file)
             img, scaled_image_dims = resize_and_pad(img, (self.input_size, self.input_size))
             if self.grayscale:
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
                 img = np.expand_dims(img, axis=-1)
             img = img / 255
-            batch_images[file_index] = img
+            images[file_index] = img
 
             with open(f'{file[:-4]}.txt') as reader:
                 lines = reader.readlines()
@@ -59,13 +59,13 @@ class DataLoader:
                     ct = np.array([x_center, y_center], dtype=np.float32)
                     ct_int = ct.astype(np.int32)
                     radius = gaussian_radius((max(math.ceil(h), 1), max(math.ceil(w), 1)), min_overlap=0.3)
-                    draw_gaussian(batch_hms[file_index, :, :, int(object_class)], ct_int, int(radius), radius/2)
-                    batch_whs[file_index, bbox_index] = 1. * w, 1. * h
-                    batch_regs[file_index, bbox_index] = ct - ct_int
-                    batch_reg_masks[file_index, bbox_index] = 1
-                    batch_indices[file_index, bbox_index] = (ct_int[1] * self.output_size + ct_int[0])
+                    draw_gaussian(hms[file_index, :, :, int(object_class)], ct_int, int(radius), radius/2)
+                    whs[file_index, bbox_index] = 1. * w, 1. * h
+                    regs[file_index, bbox_index] = ct - ct_int
+                    reg_masks[file_index, bbox_index] = 1
+                    indices[file_index, bbox_index] = (ct_int[1] * self.output_size + ct_int[0])
                     bbox_index += 1
 
             file_index += 1
 
-        return [batch_images, batch_hms, batch_whs, batch_regs, batch_reg_masks, batch_indices]
+        return [image_names, images, hms, whs, regs, reg_masks, indices]
