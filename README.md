@@ -5,6 +5,9 @@ CenterNet is a very simple, elegant, anchor-free object detection algorithm.
 
 File utils.py contains the path to the project and the path to the folder with the data. You can change these names according to your needs.
 
+For training use train.py and for inference use inference.py.
+If you want to train digit detector (or detect other characters) use train.py and inference.py from digit_detector package.
+
 ## Digit detector
 I trained the model on 64x64 images to detect digits. Here are some examples of correctly recognized numbers:
 <p> 
