@@ -169,7 +169,7 @@ def average_convnet(input_shape=(256, 256, 3), num_classes=1, max_objects=50):
     backbone_output = BatchNormalization()(x)
     backbone_output = ReLU()(backbone_output)
 
-    hm_input = Input(shape=(input_shape[0] / 4, input_shape[1] / 4, num_classes))
+    hm_input = Input(shape=(input_shape[0] // 4, input_shape[1] // 4, num_classes))
     wh_input = Input(shape=(max_objects, 2))
     reg_input = Input(shape=(max_objects, 2))
     reg_mask_input = Input(shape=(max_objects,))
@@ -199,7 +199,7 @@ def average_convnet(input_shape=(256, 256, 3), num_classes=1, max_objects=50):
     model = Model(inputs=[image_input, hm_input, wh_input, reg_input,
                           reg_mask_input, index_input], outputs=[loss_])
 
-    detections = Lambda(lambda z: decode(*z))([y1, y2, y3])
+    detections = Lambda(lambda z: decode(*z, max_objects=max_objects))([y1, y2, y3])
     prediction_model = Model(inputs=image_input, outputs=detections)
     debug_model = Model(inputs=image_input, outputs=[y1, y2, y3])
     return model, prediction_model, debug_model
