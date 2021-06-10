@@ -6,7 +6,6 @@ import time
 import glob
 from data_preprocessing.prepare_data import DataLoader
 from utils import DATA_REAL_PATH
-from data_preprocessing.padding_and_cutting import resize_and_pad
 from digit_detector.centernet_digit_detector import DigitDetector
 
 
@@ -40,12 +39,15 @@ def main():
     data_loader = DataLoader(input_size=input_size, downsample_factor=4,
                              num_classes=num_classes, max_objects=max_objects)
 
-    dir_ = os.path.join(DATA_REAL_PATH, 'numbers/*.png')
+    pngs = glob.glob(os.path.join(DATA_REAL_PATH, 'numbers/*.png'))
+    image_names = pngs
+
+    image_names, images, _, _, _, _, _ = data_loader.load_from_dir(image_names)
+
+    # to check the correctness of recognized numbers
     annotations_file = os.path.join(DATA_REAL_PATH, 'numbers', 'annotations.txt')
     with open(annotations_file, 'r') as reader:
         annotations = reader.readlines()
-
-    image_names, images, _, _, _, _, _ = data_loader.load_from_dir(dir_, False)
 
     # for visualization
     colors = [np.random.randint(0, 256, 3).tolist() for i in range(num_classes)]

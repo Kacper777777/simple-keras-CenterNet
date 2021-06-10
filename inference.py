@@ -6,7 +6,6 @@ import time
 import glob
 from data_preprocessing.prepare_data import DataLoader
 from utils import DATA_REAL_PATH
-from data_preprocessing.padding_and_cutting import resize_and_pad
 from centernet_detector import CenterNetDetector
 
 
@@ -21,35 +20,32 @@ def main():
     model_path = os.path.join(DATA_REAL_PATH, 'model.h5')
     input_size = 256
     channels = 3
-    classes_list = ['car', 'human']
+    classes_list = ['vehicle', 'human']
     num_classes = len(classes_list)
     max_objects = 50
-    score_threshold = 0.7
+    score_threshold = 0.5
 
-    detector = CenterNetDetector(model_name='small_convnet',
+    detector = CenterNetDetector(model_name='average_convnet',
                                  input_shape=(input_size, input_size, channels),
                                  classes_list=classes_list,
                                  max_objects=max_objects,
                                  resize_and_pad=False,
-                                 grayscale=False,
+                                 grayscale=True,
                                  scale_values=1)
 
     detector.load_weights(model_path)
 
     # load the data
     data_loader = DataLoader(input_size=input_size, downsample_factor=4,
-                             num_classes=num_classes, max_objects=max_objects)
+                             num_classes=num_classes, max_objects=max_objects, grayscale=False)
 
-    dir_ = os.path.join(DATA_REAL_PATH, 'cars/*.png')
+    pngs = glob.glob(os.path.join(DATA_REAL_PATH, 'vehicles/*.png'))
+    jpgs = glob.glob(os.path.join(DATA_REAL_PATH, 'vehicles/*.jpg'))
+    image_names = pngs + jpgs
+    image_names = image_names[:50]
+    random.shuffle(image_names)
 
-    _, images, _, _, _, _, _ = data_loader.load_from_dir(dir_, False)
-
-    image_files = glob.glob(dir_)
-    image_files = image_files[:20]
-    colour_images = [cv2.imread(file) for file in image_files]
-    colour_images = [resize_and_pad(img, (input_size, input_size))[0] for img in colour_images]
-
-    print(images.shape)
+    _, images, _, _, _, _, _ = data_loader.load_from_dir(image_names)
 
     # for visualization
     colors = [np.random.randint(0, 256, 3).tolist() for i in range(num_classes)]
@@ -57,27 +53,27 @@ def main():
     for i in range(images.shape[0]):
         inputs = images[i]
         inputs = np.expand_dims(inputs, axis=0)
-        src_image = colour_images[i]
-        detections = detector.detect(inputs, score_threshold)[0]
+        detections = detector.detect(inputs, score_threshold)
+        output_image = images[i] * 255
 
         for detection in detections:
-            xmin = round(detection[0])
-            ymin = round(detection[1])
-            xmax = round(detection[2])
-            ymax = round(detection[3])
-            score = '{:.4f}'.format(detection[4])
+            xmin = int(round(detection[0]))
+            ymin = int(round(detection[1]))
+            xmax = int(round(detection[2]))
+            ymax = int(round(detection[3]))
+            score = '{:.2f}'.format(detection[4])
             class_id = int(detection[5])
             color = colors[class_id]
             class_name = classes_list[class_id]
             label = '-'.join([class_name, score])
 
-            cv2.rectangle(src_image, (xmin, ymin), (xmax, ymax), color, 1)
+            cv2.rectangle(output_image, (xmin, ymin), (xmax, ymax), color, 3)
             ret, baseline = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.2, 1)
-            cv2.rectangle(src_image, (xmin, ymax - ret[1] - baseline), (xmin + ret[0], ymax), color, -1)
-            cv2.putText(src_image, label, (xmin, ymax - baseline), cv2.FONT_HERSHEY_SIMPLEX, 0.2, (0, 0, 0), 1)
+            cv2.rectangle(output_image, (xmin, ymax - ret[1] - baseline), (xmin + ret[0], ymax), color, -1)
+            cv2.putText(output_image, label, (xmin, ymax - baseline), cv2.FONT_HERSHEY_SIMPLEX, 0.2, (0, 0, 0), 1)
 
-        cv2.imwrite(os.path.join(DATA_REAL_PATH, 'output', f'image_with_boxes{i}.jpg'), src_image)
-        cv2.imwrite(os.path.join(DATA_REAL_PATH, 'output', f'image_original{i}.jpg'), images[i] * 255)
+        cv2.imwrite(os.path.join(DATA_REAL_PATH, 'output', f'image_{i}.jpg'), images[i] * 255)
+        cv2.imwrite(os.path.join(DATA_REAL_PATH, 'output', f'image_{i}_predicted.jpg'), output_image)
 
 
 if __name__ == '__main__':

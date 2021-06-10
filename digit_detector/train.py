@@ -1,8 +1,9 @@
 import tensorflow as tf
-from tensorflow.keras.callbacks import LearningRateScheduler
+from tensorflow.keras.callbacks import LearningRateScheduler, ReduceLROnPlateau
 import numpy as np
 import random
 import os
+import glob
 from data_preprocessing.prepare_data import DataLoader
 from utils import DATA_REAL_PATH
 from digit_detector.centernet_digit_detector import DigitDetector
@@ -48,16 +49,20 @@ def main():
     data_loader = DataLoader(input_size=input_size, downsample_factor=4,
                              num_classes=num_classes, max_objects=max_objects, grayscale=True)
 
-    dir_ = os.path.join(DATA_REAL_PATH, 'numbers/*.png')
+    pngs = glob.glob(os.path.join(DATA_REAL_PATH, 'numbers/*.png'))
+    image_names = pngs
+    # image_names = image_names[:100]
+    random.shuffle(image_names)
 
-    _, images, hms, whs, regs, reg_masks, indices = data_loader.load_from_dir(dir_, True)
+    _, images, hms, whs, regs, reg_masks, indices = data_loader.load_from_dir(image_names)
 
     # training configuration
     epochs = 150
     early_stopping = tf.keras.callbacks.EarlyStopping(
         monitor="loss", patience=5, restore_best_weights=True)
-    lr_scheduler = LearningRateScheduler(lr_schedule)
-    callbacks_list = [early_stopping, lr_scheduler]
+    # lr_scheduler = LearningRateScheduler(lr_schedule)
+    reduce_lr_on_plateau = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=5)
+    callbacks_list = [early_stopping, reduce_lr_on_plateau]
     optimizer = tf.keras.optimizers.Adam()
 
     detector.model.compile(optimizer=optimizer,

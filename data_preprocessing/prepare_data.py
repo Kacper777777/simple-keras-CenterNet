@@ -1,8 +1,6 @@
 import cv2
 import math
-import random
 import numpy as np
-import glob
 from data_preprocessing.gaussian import gaussian_radius, draw_gaussian
 from data_preprocessing.padding_and_cutting import resize_and_pad
 
@@ -16,10 +14,7 @@ class DataLoader:
         self.max_objects = max_objects
         self.grayscale = grayscale
 
-    def load_from_dir(self, dir_, shuffle):
-        image_names = glob.glob(dir_)
-        if shuffle:
-            random.shuffle(image_names)
+    def load_from_dir(self, image_names):
         channels = 1 if self.grayscale else 3
         images = np.zeros((len(image_names), self.input_size, self.input_size, channels),
                           dtype=np.float32)
