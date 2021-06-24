@@ -4,7 +4,7 @@ import numpy as np
 
 class DigitDetector(CenterNetDetector):
     def __init__(self, model_name, input_shape, classes_list, max_objects,
-                 image_preprocessor):
+                 image_preprocessor=None):
         super().__init__(model_name, input_shape, classes_list, max_objects,
                          image_preprocessor)
 
