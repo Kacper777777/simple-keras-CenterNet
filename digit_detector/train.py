@@ -1,23 +1,11 @@
 import tensorflow as tf
-from tensorflow.keras.callbacks import LearningRateScheduler, ReduceLROnPlateau
 import numpy as np
 import random
 import os
 import glob
-from data_preprocessing.prepare_data import DataLoader
 from utils import DATA_REAL_PATH
+from data_preprocessing.generator import CustomGenerator
 from digit_detector.centernet_digit_detector import DigitDetector
-
-
-def lr_schedule(epoch):
-    lr = 1
-    if epoch <= 30:
-        lr = 1e-3
-    elif epoch <= 60:
-        lr = 1e-4
-    else:
-        lr = 1e-5
-    return lr
 
 
 def main():
@@ -29,61 +17,84 @@ def main():
 
     # configuration
     model_path = os.path.join(DATA_REAL_PATH, 'model.h5')
+    checkpoint_path = os.path.join(model_path, 'checkpoint_dir', 'cp.ckpt')
+    checkpoint_dir = os.path.dirname(checkpoint_path)
     input_size = 64
     channels = 1
+    grayscale = True
+    downsample_factor = 4
     classes_list = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
     num_classes = len(classes_list)
     max_objects = 10
 
-    detector = DigitDetector(model_name='small_convnet',
+    detector = DigitDetector(model_name='mini_convnet',
                              input_shape=(input_size, input_size, channels),
                              classes_list=classes_list,
                              max_objects=max_objects,
-                             resize_and_pad=False,
-                             grayscale=False,
-                             scale_values=1)
+                             image_preprocessor=None)
 
-    # detector.load_weights(model_path)
+    detector.load_weights(os.path.join(model_path, 'model_tf_format', 'model'))
 
-    # load the training data
-    data_loader = DataLoader(input_size=input_size, downsample_factor=4,
-                             num_classes=num_classes, max_objects=max_objects, grayscale=True)
-
+    # load image names
     pngs = glob.glob(os.path.join(DATA_REAL_PATH, 'numbers/*.png'))
-    image_names = pngs
-    # image_names = image_names[:100]
+    jpgs = glob.glob(os.path.join(DATA_REAL_PATH, 'numbers/*.jpg'))
+    image_names = pngs + jpgs
     random.shuffle(image_names)
 
-    _, images, hms, whs, regs, reg_masks, indices = data_loader.load_from_dir(image_names)
-
     # training configuration
-    epochs = 150
-    early_stopping = tf.keras.callbacks.EarlyStopping(
-        monitor="loss", patience=5, restore_best_weights=True)
-    # lr_scheduler = LearningRateScheduler(lr_schedule)
-    reduce_lr_on_plateau = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=5)
-    callbacks_list = [early_stopping, reduce_lr_on_plateau]
-    optimizer = tf.keras.optimizers.Adam()
 
+    # create custom generator
+    train_gen = CustomGenerator(preprocessing_strategy='resize_with_pad',
+                                input_size=input_size,
+                                grayscale=grayscale,
+                                downsample_factor=downsample_factor,
+                                num_classes=num_classes,
+                                max_objects=max_objects,
+                                image_names=image_names[:0.8*len(image_names)],
+                                batch_size=64)
+
+    val_gen = CustomGenerator(preprocessing_strategy='resize_with_pad',
+                              input_size=input_size,
+                              grayscale=grayscale,
+                              downsample_factor=downsample_factor,
+                              num_classes=num_classes,
+                              max_objects=max_objects,
+                              image_names=image_names[0.8*len(image_names):],
+                              batch_size=64)
+
+    epochs = 150
+
+    early_stopping = tf.keras.callbacks.EarlyStopping(
+        monitor="val_loss", patience=20, restore_best_weights=True)
+
+    checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
+        filepath=checkpoint_path, monitor='val_loss', verbose=1, save_weights_only=True,
+        save_freq='epoch', mode='auto', save_best_only=True)
+
+    reduce_lr_on_plateau = tf.keras.callbacks.ReduceLROnPlateau(monitor='loss', factor=0.1, patience=10)
+
+    callbacks_list = [early_stopping, checkpoint_callback, reduce_lr_on_plateau]
+
+    optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
     detector.model.compile(optimizer=optimizer,
                            loss={'centernet_loss': lambda y_true, y_pred: y_pred},
                            run_eagerly=True)
-
     detector.model.summary()
 
-    print(f'The shape of the training data is: {images.shape}')
+    print(f'The shape of the training data is: {len(image_names)}')
 
     detector.model.fit(
-        x=[images, hms, whs, regs, reg_masks, indices],
-        y=np.zeros(images.shape[0]),
+        x=train_gen,
         epochs=epochs,
-        batch_size=128,
-        shuffle=True,
-        validation_split=0.2,
+        validation_data=val_gen,
         callbacks=callbacks_list,
     )
 
-    detector.model.save_weights(model_path)
+    # Saving weights after training (tf format)
+    detector.model.save_weights(os.path.join(model_path, 'model_tf_format', 'model'), save_format='tf')
+
+    # Saving weights after training (h5 format)
+    detector.model.save_weights(os.path.join(model_path, 'model_h5_format', 'model.h5'), save_format='h5')
 
 
 if __name__ == '__main__':
