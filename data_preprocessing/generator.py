@@ -14,6 +14,9 @@ class CustomGenerator(Sequence):
         self.__shuffle = shuffle
         self.__input_size = input_size
         self.__grayscale = grayscale
+        self.__image_preprocessor = ImagePreprocessor(preprocessing_strategy=preprocessing_strategy,
+                                                      target_shape=self.__input_size,
+                                                      grayscale=grayscale)
         self.__downsample_factor = downsample_factor
         self.__output_size = input_size // downsample_factor
         self.__num_classes = num_classes
@@ -21,9 +24,6 @@ class CustomGenerator(Sequence):
         self.__image_names = image_names
         self.__batch_size = batch_size
         self.__batch_number = 0
-        self.__image_preprocessor = ImagePreprocessor(preprocessing_strategy=preprocessing_strategy,
-                                                      target_shape=self.__input_size,
-                                                      grayscale=grayscale)
 
     def __len__(self):
         """Denotes the number of batches per epoch
