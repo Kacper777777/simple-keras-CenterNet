@@ -8,10 +8,10 @@ from tensorflow_core.python.keras.utils.data_utils import Sequence
 
 
 class CustomGenerator(Sequence):
-    def __init__(self, preprocessing_strategy, input_size, grayscale, downsample_factor,
+    def __init__(self, shuffle, preprocessing_strategy, input_size, grayscale, downsample_factor,
                  num_classes, max_objects,
                  image_names, batch_size):
-        self.__preprocessing_strategy = preprocessing_strategy
+        self.__shuffle = shuffle
         self.__input_size = input_size
         self.__grayscale = grayscale
         self.__downsample_factor = downsample_factor
@@ -44,7 +44,7 @@ class CustomGenerator(Sequence):
         return X, y
 
     def on_epoch_end(self):
-        if self.shuffle:
+        if self.__shuffle:
             random.shuffle(self.__image_names)
 
     def _generate_X(self, selected_image_names_indices):
