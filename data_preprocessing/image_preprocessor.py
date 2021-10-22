@@ -8,12 +8,12 @@ class ImagePreprocessor:
 
         # choose preprocessing strategy
         self.__preprocessing_strategy = preprocessing_strategy
-        self.preprocessing_functions = {'resize': self.__resize,
+        self.__preprocessing_functions = {'resize': self.__resize,
                                         'resize_with_pad': self.__resize_with_pad}
-        if preprocessing_strategy not in self.preprocessing_functions:
+        if preprocessing_strategy not in self.__preprocessing_functions:
             raise Exception('Incorrect preprocessing strategy (should be "resize" or "resize_with_pad")')
         else:
-            self.preprocessing_func = self.preprocessing_functions.get(preprocessing_strategy)
+            self.__preprocessing_func = self.__preprocessing_functions.get(preprocessing_strategy)
 
         # set target shape
         if type(target_shape) is int:
@@ -54,7 +54,7 @@ class ImagePreprocessor:
     def preprocess_image(self, image):
         image = np.dot(image[..., :3], self.__rgb_weights)
         image = image.reshape((image.shape[0], image.shape[1], self.__channels))
-        return self.preprocessing_func(image) * self.__scale_factor
+        return self.__preprocessing_func(image) * self.__scale_factor
 
     def scaled_image_dims(self, image):
         height_ratio = image.shape[0] / self.__target_height
