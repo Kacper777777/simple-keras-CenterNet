@@ -29,7 +29,7 @@ def main():
 
     model = googlenet(image_shape=(input_size, input_size, channels),
                       num_classes=num_classes,
-                      max_objects=max_objects)
+                      max_objects=max_objects)[1]
 
     model.load_weights(os.path.join(model_path, 'model_tf_format', 'model'))
 
