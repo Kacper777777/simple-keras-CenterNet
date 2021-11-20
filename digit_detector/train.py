@@ -4,7 +4,7 @@ import random
 import os
 import glob
 from utils import DATA_REAL_PATH
-from data_preprocessing.generator import CustomGenerator
+from data_preprocessing.generator import CenterNetGenerator
 from digit_detector.centernet_digit_detector import DigitDetector
 
 
@@ -44,23 +44,23 @@ def main():
     # training configuration
 
     # create custom generator
-    train_gen = CustomGenerator(preprocessing_strategy='resize_with_pad',
-                                input_size=input_size,
-                                grayscale=grayscale,
-                                downsample_factor=downsample_factor,
-                                num_classes=num_classes,
-                                max_objects=max_objects,
-                                image_names=image_names[:0.8*len(image_names)],
-                                batch_size=64)
+    train_gen = CenterNetGenerator(preprocessing_strategy='resize_with_pad',
+                                   input_size=input_size,
+                                   grayscale=grayscale,
+                                   downsample_factor=downsample_factor,
+                                   num_classes=num_classes,
+                                   max_objects=max_objects,
+                                   image_names=image_names[:0.8*len(image_names)],
+                                   batch_size=64)
 
-    val_gen = CustomGenerator(preprocessing_strategy='resize_with_pad',
-                              input_size=input_size,
-                              grayscale=grayscale,
-                              downsample_factor=downsample_factor,
-                              num_classes=num_classes,
-                              max_objects=max_objects,
-                              image_names=image_names[0.8*len(image_names):],
-                              batch_size=64)
+    val_gen = CenterNetGenerator(preprocessing_strategy='resize_with_pad',
+                                 input_size=input_size,
+                                 grayscale=grayscale,
+                                 downsample_factor=downsample_factor,
+                                 num_classes=num_classes,
+                                 max_objects=max_objects,
+                                 image_names=image_names[0.8*len(image_names):],
+                                 batch_size=64)
 
     epochs = 150
 

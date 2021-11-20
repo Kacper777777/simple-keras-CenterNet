@@ -7,7 +7,7 @@ from data_preprocessing.image_preprocessor import ImagePreprocessor
 from tensorflow.python.keras.utils.data_utils import Sequence
 
 
-class CustomGenerator(Sequence):
+class CenterNetGenerator(Sequence):
     def __init__(self, shuffle, preprocessing_strategy, input_size, grayscale, downsample_factor,
                  num_classes, max_objects,
                  image_names, batch_size):

@@ -4,7 +4,7 @@ import random
 import os
 import glob
 from utils import DATA_REAL_PATH
-from data_preprocessing.generator import CustomGenerator
+from data_preprocessing.generator import CenterNetGenerator
 from models import miniconvnet_64, googlenet
 
 
@@ -42,25 +42,25 @@ def main():
     # training configuration
 
     # create custom generators
-    train_gen = CustomGenerator(shuffle=True,
-                                preprocessing_strategy='resize_with_pad',
-                                input_size=input_size,
-                                grayscale=grayscale,
-                                downsample_factor=downsample_factor,
-                                num_classes=num_classes,
-                                max_objects=max_objects,
-                                image_names=image_names[:0.8 * len(image_names)],
-                                batch_size=32)
+    train_gen = CenterNetGenerator(shuffle=True,
+                                   preprocessing_strategy='resize_with_pad',
+                                   input_size=input_size,
+                                   grayscale=grayscale,
+                                   downsample_factor=downsample_factor,
+                                   num_classes=num_classes,
+                                   max_objects=max_objects,
+                                   image_names=image_names[:0.8 * len(image_names)],
+                                   batch_size=32)
 
-    val_gen = CustomGenerator(shuffle=True,
-                              preprocessing_strategy='resize_with_pad',
-                              input_size=input_size,
-                              grayscale=grayscale,
-                              downsample_factor=downsample_factor,
-                              num_classes=num_classes,
-                              max_objects=max_objects,
-                              image_names=image_names[0.8 * len(image_names):],
-                              batch_size=32)
+    val_gen = CenterNetGenerator(shuffle=True,
+                                 preprocessing_strategy='resize_with_pad',
+                                 input_size=input_size,
+                                 grayscale=grayscale,
+                                 downsample_factor=downsample_factor,
+                                 num_classes=num_classes,
+                                 max_objects=max_objects,
+                                 image_names=image_names[0.8 * len(image_names):],
+                                 batch_size=32)
 
     epochs = 50
 
