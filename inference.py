@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import time
 import glob
+from models import googlenet
 from utils import DATA_REAL_PATH
 from data_preprocessing.image_preprocessor import ImagePreprocessor
 from centernet_detector import CenterNetDetector
@@ -28,11 +29,18 @@ def main():
     max_objects = 100
     score_threshold = 0.7
 
+    autoencoder_model, model, prediction_model, debug_model = googlenet(image_shape=(input_size, input_size, channels),
+                                                                        num_classes=num_classes,
+                                                                        max_objects=max_objects)
+
     image_preprocessor = ImagePreprocessor(preprocessing_strategy='resize_with_pad',
                                            target_shape=input_size,
                                            grayscale=grayscale)
 
-    detector = CenterNetDetector(model_name='average_convnet',
+    detector = CenterNetDetector(model=model,
+                                 prediction_model=prediction_model,
+                                 debug_model=debug_model,
+                                 downsample_factor=4,
                                  input_shape=(input_size, input_size, channels),
                                  classes_list=classes_list,
                                  max_objects=max_objects,
