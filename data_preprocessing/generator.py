@@ -34,7 +34,7 @@ class CenterNetGenerator(Sequence):
     def __getitem__(self, item):
         """Generate one batch of data"""
         selected_image_names_indices = list(range(self.__batch_number * self.__batch_size,
-                                             (self.__batch_number + 1) * self.__batch_size))
+                                                  (self.__batch_number + 1) * self.__batch_size))
         print('selected_image_names_indices', selected_image_names_indices)
         X = self._generate_X(selected_image_names_indices)
         y = self._generate_y(selected_image_names_indices)
