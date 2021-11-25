@@ -35,7 +35,6 @@ class CenterNetGenerator(Sequence):
         """Generate one batch of data"""
         selected_image_names_indices = list(range(self.__batch_number * self.__batch_size,
                                                   (self.__batch_number + 1) * self.__batch_size))
-        print('selected_image_names_indices', selected_image_names_indices)
         X = self._generate_X(selected_image_names_indices)
         y = self._generate_y(selected_image_names_indices)
         self.__batch_number += 1
@@ -94,7 +93,7 @@ class CenterNetGenerator(Sequence):
 
             file_index += 1
 
-        return [selected_image_names, images, hms, whs, regs, reg_masks, indices]
+        return images, hms, whs, regs, reg_masks, indices
 
     def _generate_y(self, selected_image_names_indices):
         return np.zeros(len(selected_image_names_indices))
