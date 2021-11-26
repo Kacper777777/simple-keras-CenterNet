@@ -56,11 +56,14 @@ class ImagePreprocessor:
         image = image.reshape((image.shape[0], image.shape[1], self.__channels))
         return self.__preprocessing_func(image) * self.__scale_factor
 
-    def scaled_image_dims(self, image):
+    def resize_factor(self, image):
         height_ratio = image.shape[0] / self.__target_height
         width_ratio = image.shape[1] / self.__target_width
-        scale_factor = max(height_ratio, width_ratio)
-        return round(image.shape[0] / scale_factor), round(image.shape[1] / scale_factor)
+        return max(height_ratio, width_ratio)
+
+    def scaled_image_dims(self, image):
+        r_factor = self.resize_factor(image)
+        return round(image.shape[0] / r_factor), round(image.shape[1] / r_factor)
 
     def __resize(self, image):
         return np.array(tf.image.resize(image, [self.__target_height, self.__target_width]))
