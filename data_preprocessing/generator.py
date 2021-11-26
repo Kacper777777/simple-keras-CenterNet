@@ -4,7 +4,8 @@ import numpy as np
 import random
 from data_preprocessing.gaussian import gaussian_radius, draw_gaussian
 from data_preprocessing.image_preprocessor import ImagePreprocessor
-from tensorflow.python.keras.utils.data_utils import Sequence
+# from tensorflow.python.keras.utils.data_utils import Sequence
+from tensorflow.keras.utils import Sequence
 
 
 class CenterNetGenerator(Sequence):
@@ -93,7 +94,8 @@ class CenterNetGenerator(Sequence):
 
             file_index += 1
 
-        return images, hms, whs, regs, reg_masks, indices
+        return np.array(images), np.array(hms), np.array(whs), np.array(regs), \
+               np.array(reg_masks), np.array(indices)
 
     def _generate_y(self, selected_image_names_indices):
         return np.zeros(len(selected_image_names_indices))
