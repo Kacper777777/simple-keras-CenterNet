@@ -62,8 +62,8 @@ class CenterNetGenerator(Sequence):
         selected_image_names = [self.__image_names[index] for index in selected_image_names_indices]
         for file in selected_image_names:
             img = cv2.imread(file)
-            img = self.__image_preprocessor.preprocess_image(img)
             scaled_image_dims = self.__image_preprocessor.scaled_image_dims(img)
+            img = self.__image_preprocessor.preprocess_image(img)
             images[file_index] = img
 
             with open(f'{file[:-4]}.txt') as reader:
