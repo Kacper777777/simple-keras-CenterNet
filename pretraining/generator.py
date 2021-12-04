@@ -1,9 +1,8 @@
-import tensorflow as tf
+import cv2
 import numpy as np
 import random
-import os
-import glob
 from tensorflow_core.python.keras.utils.data_utils import Sequence
+from data_preprocessing.image_preprocessor import ImagePreprocessor
 
 
 class AutoEncoderGenerator(Sequence):
@@ -52,7 +51,7 @@ class AutoEncoderGenerator(Sequence):
             img = self.__image_preprocessor.preprocess_image(img)
             images[file_index] = img
             file_index += 1
-        return [selected_image_names, images]
+        return np.array(images)
 
     def _generate_y(self, selected_image_names_indices):
         return self._generate_X(selected_image_names_indices)
