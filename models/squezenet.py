@@ -163,13 +163,16 @@ def squeezenet_centernet(image_shape=(256, 256, 3), num_classes=1, max_objects=1
     prediction_model = Model(inputs=image_input, outputs=detections)
     debug_model = Model(inputs=image_input, outputs=[y1, y2, y3])
 
-    return model, prediction_model, debug_model
+    return {'train_model': model,
+            'prediction_model': prediction_model,
+            'debug_model': debug_model}
 
 
 if __name__ == '__main__':
     snet = squeezenet(image_shape=(256, 256, 3))
     snet_autoencoder = squeezenet_autoencoder(image_shape=(256, 256, 3))
     snet_centernet = squeezenet_centernet(image_shape=(256, 256, 3), num_classes=1, max_objects=1)
+
     snet.summary()
     snet_autoencoder.summary()
-    snet_centernet[0].summary()
+    snet_centernet.get('train_model').summary()
