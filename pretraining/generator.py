@@ -1,8 +1,9 @@
 import cv2
 import numpy as np
 import random
-from tensorflow_core.python.keras.utils.data_utils import Sequence
 from data_preprocessing.image_preprocessor import ImagePreprocessor
+# from tensorflow_core.python.keras.utils.data_utils import Sequence
+from tensorflow.keras.utils import Sequence
 
 
 class AutoEncoderGenerator(Sequence):
