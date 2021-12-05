@@ -3,7 +3,10 @@ import numpy as np
 import random
 import os
 import glob
-from tensorflow_core.python.keras.utils.data_utils import Sequence
+from utils import DATA_REAL_PATH
+from pretraining.generator import AutoEncoderGenerator
+from models.googlenet import googlenet_autoencoder
+from models.squezenet import squeezenet_autoencoder
 
 
 def main():
@@ -17,35 +20,37 @@ def main():
     model_path = os.path.join(DATA_REAL_PATH, 'NEWEST_MODEL')
     checkpoint_path = os.path.join(model_path, 'checkpoint_dir', 'cp.ckpt')
     checkpoint_dir = os.path.dirname(checkpoint_path)
-    input_size = 512
+    input_size = 256
     channels = 3
     grayscale = False if channels == 3 else True
 
-    model = googlenet(input_shape=(input_size, input_size, channels), num_classes=2, max_objects=100)
-    model.load_weights(os.path.join(model_path, 'model_tf_format', 'model'))
+    model = googlenet_autoencoder(image_shape=(input_size, input_size, channels))
+
+    # model.load_weights(os.path.join(model_path, 'model_tf_format', 'model'))
+    # model.load_weights(checkpoint_path)
 
     # load image names
-    pngs = glob.glob(os.path.join(DATA_REAL_PATH, 'vehicles/*.png'))
-    jpgs = glob.glob(os.path.join(DATA_REAL_PATH, 'vehicles/*.jpg'))
+    pngs = glob.glob(os.path.join(DATA_REAL_PATH, 'datasets', 'chessboards/*.png'))
+    jpgs = glob.glob(os.path.join(DATA_REAL_PATH, 'datasets', 'chessboards/*.jpg'))
     image_names = pngs + jpgs
-    random.shuffle(image_names)
+    # random.shuffle(image_names)
 
     # training configuration
 
     # create custom generators
-    train_gen = AutoEncoderGenerator(shuffle=shuffle,
+    train_gen = AutoEncoderGenerator(shuffle=True,
                                      preprocessing_strategy='resize_with_pad',
                                      input_size=input_size,
                                      grayscale=grayscale,
-                                     image_names=image_names[:0.8 * len(image_names)],
-                                     batch_size=32)
+                                     image_names=image_names[:int(0.8 * len(image_names))],
+                                     batch_size=16)
 
-    val_gen = AutoEncoderGenerator(shuffle=shuffle,
+    val_gen = AutoEncoderGenerator(shuffle=True,
                                    preprocessing_strategy='resize_with_pad',
                                    input_size=input_size,
                                    grayscale=grayscale,
-                                   image_names=image_names[0.8 * len(image_names):],
-                                   batch_size=32)
+                                   image_names=image_names[int(0.8 * len(image_names)):],
+                                   batch_size=16)
 
     epochs = 50
 
@@ -68,18 +73,20 @@ def main():
 
     print(f'The shape of the training data is: {len(image_names)}')
 
-    detector.model.fit(
+    model.fit(
         x=train_gen,
         epochs=epochs,
         validation_data=val_gen,
         callbacks=callbacks_list,
+        # workers=2,
+        # use_multiprocessing=True
     )
 
     # Saving weights after training (tf format)
-    detector.model.save_weights(os.path.join(model_path, 'model_tf_format', 'model'), save_format='tf')
+    model.save_weights(os.path.join(model_path, 'model_tf_format', 'model'), save_format='tf')
 
     # Saving weights after training (h5 format)
-    detector.model.save_weights(os.path.join(model_path, 'model_h5_format', 'model.h5'), save_format='h5')
+    model.save_weights(os.path.join(model_path, 'model_h5_format', 'model.h5'), save_format='h5')
 
 
 if __name__ == '__main__':
