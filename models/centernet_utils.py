@@ -60,3 +60,7 @@ def regression_header(backbone_output, num_filters):
     y = ReLU()(y)
     y = Conv2D(2, 1, kernel_initializer='he_normal', kernel_regularizer=l2(5e-4))(y)
     return y
+
+
+def calculate_iou():
+    pass
