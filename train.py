@@ -5,7 +5,7 @@ import os
 import glob
 from utils import DATA_REAL_PATH
 from data_preprocessing.generator import CenterNetGenerator
-from models import miniconvnet_64, googlenet
+from models.squezenet import squeezenet_centernet
 
 
 def main():
@@ -19,25 +19,26 @@ def main():
     model_path = os.path.join(DATA_REAL_PATH, 'NEWEST_MODEL')
     checkpoint_path = os.path.join(model_path, 'checkpoint_dir', 'cp.ckpt')
     checkpoint_dir = os.path.dirname(checkpoint_path)
-    input_size = 512
+    input_size = 256
     channels = 3
     grayscale = False if channels == 3 else True
     downsample_factor = 4
-    classes_list = ['vehicle', 'human']
+    classes_list = ['chessboard']
     num_classes = len(classes_list)
-    max_objects = 100
+    max_objects = 1
 
-    model = googlenet(image_shape=(input_size, input_size, channels),
-                      num_classes=num_classes,
-                      max_objects=max_objects)[1]
+    model = squeezenet_centernet(image_shape=(input_size, input_size, channels),
+                                 num_classes=num_classes,
+                                 max_objects=max_objects).get('train_model')
 
-    model.load_weights(os.path.join(model_path, 'model_tf_format', 'model'))
+    #model.load_weights(os.path.join(model_path, 'model_tf_format', 'model'))
+    #model.load_weights(checkpoint_path)
 
     # load image names
-    pngs = glob.glob(os.path.join(DATA_REAL_PATH, 'vehicles/*.png'))
-    jpgs = glob.glob(os.path.join(DATA_REAL_PATH, 'vehicles/*.jpg'))
+    pngs = glob.glob(os.path.join(DATA_REAL_PATH, 'datasets', 'chessboards/*.png'))
+    jpgs = glob.glob(os.path.join(DATA_REAL_PATH, 'datasets', 'chessboards/*.jpg'))
     image_names = pngs + jpgs
-    random.shuffle(image_names)
+    # random.shuffle(image_names)
 
     # training configuration
 
@@ -49,7 +50,7 @@ def main():
                                    downsample_factor=downsample_factor,
                                    num_classes=num_classes,
                                    max_objects=max_objects,
-                                   image_names=image_names[:0.8 * len(image_names)],
+                                   image_names=image_names[:int(0.8 * len(image_names))],
                                    batch_size=32)
 
     val_gen = CenterNetGenerator(shuffle=True,
@@ -59,19 +60,19 @@ def main():
                                  downsample_factor=downsample_factor,
                                  num_classes=num_classes,
                                  max_objects=max_objects,
-                                 image_names=image_names[0.8 * len(image_names):],
+                                 image_names=image_names[int(0.8 * len(image_names)):],
                                  batch_size=32)
 
     epochs = 50
 
     early_stopping = tf.keras.callbacks.EarlyStopping(
-        monitor="val_loss", patience=20, restore_best_weights=True)
+        monitor="val_loss", patience=10, restore_best_weights=True)
 
     checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
         filepath=checkpoint_path, monitor='val_loss', verbose=1, save_weights_only=True,
         save_freq='epoch', mode='auto', save_best_only=True)
 
-    reduce_lr_on_plateau = tf.keras.callbacks.ReduceLROnPlateau(monitor='loss', factor=0.1, patience=5)
+    reduce_lr_on_plateau = tf.keras.callbacks.ReduceLROnPlateau(monitor='loss', factor=0.5, patience=5)
 
     callbacks_list = [early_stopping, checkpoint_callback, reduce_lr_on_plateau]
 
