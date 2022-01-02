@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras.layers import Conv2D, BatchNormalization, ReLU
 from tensorflow.keras.regularizers import l2
-from losses import main_loss
+from training.losses import main_loss
 
 
 def topk(hm, max_objects):
