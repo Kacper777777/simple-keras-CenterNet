@@ -29,13 +29,13 @@ class ObjectDetectionDataset:
         ds_train = filelist_ds.take(int(self.__ds_size * train_ratio))
         ds_test = filelist_ds.skip(int(self.__ds_size * train_ratio))
 
-        ds_train = ds_train.map(self._combine_images_labels, num_parallel_calls=tf.data.experimental.AUTOTUNE)
         ds_train = ds_train.shuffle(int(self.__ds_size * train_ratio))
+        ds_train = ds_train.map(self._combine_images_labels, num_parallel_calls=tf.data.experimental.AUTOTUNE)
         ds_train = ds_train.batch(self.__batch_size)
         ds_train = ds_train.prefetch(tf.data.experimental.AUTOTUNE)
 
-        ds_test = ds_test.map(self._combine_images_labels, num_parallel_calls=tf.data.experimental.AUTOTUNE)
         ds_test = ds_test.shuffle(int(self.__ds_size * (1 - train_ratio)))
+        ds_test = ds_test.map(self._combine_images_labels, num_parallel_calls=tf.data.experimental.AUTOTUNE)
         ds_test = ds_test.batch(self.__batch_size)
         ds_test = ds_test.prefetch(tf.data.experimental.AUTOTUNE)
 
