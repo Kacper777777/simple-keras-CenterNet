@@ -54,20 +54,20 @@ class ObjectDetectionDataset:
         return (a, b, c, d, e, f), y
 
     def _generate_X(self, file):
-        channels = 1 if grayscale else 3
-        image = np.zeros((input_size, input_size, channels),
+        channels = 1 if self.__grayscale else 3
+        image = np.zeros((self.__input_size, self.__input_size, channels),
                          dtype=np.float32)
-        hms = np.zeros((output_size, output_size, num_classes),
+        hms = np.zeros((self.__output_size, self.__output_size, self.__num_classes),
                        dtype=np.float32)
-        whs = np.zeros((max_objects, 2), dtype=np.float32)
-        regs = np.zeros((max_objects, 2), dtype=np.float32)
-        reg_masks = np.zeros((max_objects), dtype=np.float32)
-        indices = np.zeros((max_objects), dtype=np.float32)
+        whs = np.zeros((self.__max_objects, 2), dtype=np.float32)
+        regs = np.zeros((self.__max_objects, 2), dtype=np.float32)
+        reg_masks = np.zeros((self.__max_objects), dtype=np.float32)
+        indices = np.zeros((self.__max_objects), dtype=np.float32)
 
         file = str(file.numpy())[2:-1]
         img = cv2.imread(file)
-        scaled_image_dims = image_preprocessor.scaled_image_dims(img)
-        img = image_preprocessor.preprocess_image(img)
+        scaled_image_dims = self.__image_preprocessor.scaled_image_dims(img)
+        img = self.__image_preprocessor.preprocess_image(img)
         image = img
 
         with open(f'{file[:-4]}.txt') as reader:
@@ -80,11 +80,11 @@ class ObjectDetectionDataset:
 
                 x_center, y_center = x_center * scaled_image_dims[1], y_center * scaled_image_dims[0]
                 w, h = w * scaled_image_dims[1], h * scaled_image_dims[0]
-                x_center += (input_size - scaled_image_dims[1]) / 2
-                y_center += (input_size - scaled_image_dims[0]) / 2
+                x_center += (self.__input_size - scaled_image_dims[1]) / 2
+                y_center += (self.__input_size - scaled_image_dims[0]) / 2
 
-                x_center, y_center = x_center / downsample_factor, y_center / downsample_factor
-                w, h = w / downsample_factor, h / downsample_factor
+                x_center, y_center = x_center / self.__downsample_factor, y_center / self.__downsample_factor
+                w, h = w / self.__downsample_factor, h / self.__downsample_factor
 
                 ct = np.array([x_center, y_center], dtype=np.float32)
                 ct_int = ct.astype(np.int32)
@@ -93,7 +93,7 @@ class ObjectDetectionDataset:
                 whs[bbox_index] = 1. * w, 1. * h
                 regs[bbox_index] = ct - ct_int
                 reg_masks[bbox_index] = 1
-                indices[bbox_index] = (ct_int[1] * output_size + ct_int[0])
+                indices[bbox_index] = (ct_int[1] * self.__output_size + ct_int[0])
                 bbox_index += 1
 
         return np.array(image), np.array(hms), np.array(whs), np.array(regs), \
